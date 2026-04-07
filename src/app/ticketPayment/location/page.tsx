@@ -1046,6 +1046,14 @@ export default function PayTicketInLocation() {
             >
               Validacion manual de ticket
             </button>
+            <button
+              className="primary-button"
+              onClick={() => {
+                router.push(`/ticketLost?locationId=${locationId}`);
+              }}
+            >
+              Boleto Perdido
+            </button>
             <div className="header-container">
               <div className="options-header">
                 <h1 className="main-header">Pago De ticket</h1>

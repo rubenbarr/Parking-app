@@ -175,3 +175,20 @@ export async function cancelTicket(
     return error;
   }
 }
+
+
+export async function createLostTicket(token: string, locationId: string, payload: object) {
+  try {
+    const req = await fetchWithTimeout(
+      `${LOCALHOST}/api/ticketRoute/createLostTicket/${locationId}`,
+      {
+        method: POST,
+        headers: { ...headers(token) },
+        body: JSON.stringify(payload)
+      },
+    );
+    return req;
+  } catch (error) {
+    return error;
+  }
+}

@@ -69,10 +69,12 @@
 .alarm {
   width: fit-content;
   font-weight: bold;
-   animation: alarmAnimation 2s linear infinite;
+  animation: alarmAnimation 2s linear infinite;
+
   &.yellow {
     background: rgb(255, 243, 173);
   }
+
   &.informative {
     background: rgb(173, 255, 180);
   }
@@ -84,11 +86,11 @@
     transform: scale(0.95);
     background: rgba(255, 255, 255, 0.466);
   }
-  
+
   50% {
-    transform:  scale(1)
+    transform: scale(1)
   }
-  
+
   100% {
     transform: scale(0.95)
   }
@@ -221,6 +223,41 @@
   }
 }
 
+.input-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  >.input-form {
+    margin: 5px 10px;
+    display: flex;
+    flex-direction: column;
+
+    label {
+      font-weight: bold;
+      color: gray;
+    }
+
+    input {
+      border: 1px solid gray;
+      border-radius: 5px;
+      height: 35px;
+      padding: 0 5px;
+    }
+
+    select {
+      border: 1px solid gray;
+      border-radius: 5px;
+      height: 35px;
+      padding: 0 5px;
+    }
+  }
+}
+
+.form-button {
+  display: flex;
+  justify-content: flex-end;
+}
+
 @media screen and (max-width: 768px) {
   .primary-button {
     width: 100%;
@@ -228,6 +265,10 @@
 
   .filter-input {
     width: 100%;
+  }
+
+  .input-container {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -729,7 +770,9 @@ table {
       }
     }
   }
+
 }
+
 
 .buttons-container {
   display: flex;
@@ -737,3 +780,4 @@ table {
   justify-content: flex-end;
   gap: 10px;
 }
+
