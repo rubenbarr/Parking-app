@@ -60,7 +60,7 @@ export default function TicketLost() {
     carModel: "",
     plates: "",
   };
-  const initialCashMethod = {
+  const initialCashMethod: ICashMethod = {
     method: "cash",
     montoPagado: 0,
     totalPayed: 0,
