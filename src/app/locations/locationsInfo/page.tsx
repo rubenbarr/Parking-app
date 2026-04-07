@@ -556,7 +556,7 @@ export default function Page() {
                     </p>
                     <p className="info-content">
                       <b>{"Total pagado: "}</b>{" "}
-                      <label> {transformToCurrency(item?.amount || 0)}</label>
+                      <label> {transformToCurrency(item?.totalPayed || 0)}</label>
                     </p>
                   </div>
                 ))}
