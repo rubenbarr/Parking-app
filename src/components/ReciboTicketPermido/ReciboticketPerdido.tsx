@@ -64,7 +64,6 @@ export const ReciboTicketLost = ({ ticket }: { ticket: TicketProps }) => {
               <View>
                 {qr && (
                   <Image
-                    alt={"qr image"}
                     src={qr}
                     style={{ width: 80, height: 80, marginBottom: 10 }}
                   />
