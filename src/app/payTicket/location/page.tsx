@@ -751,7 +751,7 @@ export default function PayTicketInLocation() {
                           <b>{"Total pagado: "}</b>{" "}
                           <label>
                             {" "}
-                            {transformToCurrency(item?.amount || 0)}
+                            {transformToCurrency(item?.montoPagado || 0)}
                           </label>
                         </p>
                       </div>
