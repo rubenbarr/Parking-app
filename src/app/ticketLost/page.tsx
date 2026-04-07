@@ -2,7 +2,7 @@
 
 import { transformToCurrency } from "@/assets/utils";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import cn from "classnames";
 import { createLostTicket } from "@/api/ticketsApi";
 import { useAuth } from "@/context/AuthContext";
@@ -33,6 +33,8 @@ interface TicketProps {
 export default function TicketLost() {
   const router = useRouter();
   const params = useSearchParams();
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+
   const { token, handleToast, setLoadingGlobal } = useAuth();
 
   const ticketPaymentAmount = 300;
@@ -83,6 +85,10 @@ export default function TicketLost() {
     }
   }, []);
 
+  const scrollToSection = () => {
+    sectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   // ========= derived values =========
   const totalPaid = useMemo(() => {
     return (cashMethod.montoPagado || 0) + (bankMethod.montoPagado || 0);
@@ -102,15 +108,27 @@ export default function TicketLost() {
 
   const canSubmit = useMemo(() => {
     const validUserInfo = Object.values(userInfo).every(Boolean);
+    const validBankInfo =
+      bankMethod.method === ""
+        ? true
+        : Object.values(bankMethod).every(Boolean);
 
     return (
       validUserInfo &&
       totalRemaining === 0 &&
       !invalidCash &&
-      cashMethod.montoPagado === cashMethod.totalPayed
+      cashMethod.montoPagado === cashMethod.totalPayed &&
+      validBankInfo
     );
-  }, [userInfo, totalRemaining, invalidCash, cashMethod.totalPayed]);
+  }, [
+    userInfo,
+    totalRemaining,
+    invalidCash,
+    cashMethod.totalPayed,
+    bankMethod,
+  ]);
 
+  console.log(canSubmit);
   // ========= handlers =========
   const handleSubmit = async () => {
     const dataPayment = [
@@ -152,6 +170,8 @@ export default function TicketLost() {
       }
       ticket.ticketId = req.data as unknown as string;
       setTicketInfo(ticket);
+      handleToast("success", "Ticket perdido creado correctamente");
+      scrollToSection();
     } catch (error) {
       handleToast(
         "error",
@@ -167,6 +187,7 @@ export default function TicketLost() {
     setCashMethod(initialCashMethod);
     setBankMethod(initialBankMethod);
     setTicketInfo(null);
+    scrollToSection();
   };
 
   const updateUser = (field: keyof typeof userInfo, value: string) => {
@@ -208,7 +229,7 @@ export default function TicketLost() {
     );
   };
   return (
-    <div>
+    <div ref={sectionRef}>
       {PDFViewerComponent()}
       <h1 className="main-header">Boleto perdido</h1>
 
@@ -260,7 +281,7 @@ export default function TicketLost() {
         <div className="form-info">
           <b>Pago del boleto perdido</b>
 
-          <div className="flex bg-gray-200 justify-around">
+          <div className="flex bg-gray-200 justify-around sm: flex-col">
             <div className="flex gap-2">
               <b>Total:</b>
               <b style={{ color: "gray" }}>
