@@ -84,7 +84,7 @@ export default function Page() {
   //utils
   const { userType, token, handleToast, setLoadingGlobal } = useAuth();
   const router = useRouter();
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = new Date().toISOString().split("T")[0];
   const searchParams = useSearchParams();
   const handleRouter = (id: string) => {
     return router.push(`/credits?requestId=${id}`);
