@@ -2,13 +2,18 @@
 
 import { transformToCurrency } from "@/assets/utils";
 import { useRouter, useSearchParams } from "next/navigation";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import cn from "classnames";
 import { createLostTicket } from "@/api/ticketsApi";
 import { useAuth } from "@/context/AuthContext";
 import { Response } from "@/api/usersApi";
 import { PDFViewer } from "@react-pdf/renderer";
 import { ReciboTicketLost } from "@/components/ReciboTicketPermido/ReciboticketPerdido";
+import { ITicket } from "@/types/ticket";
+import { ArrowRightIcon, ArrowUp } from "lucide-react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
+import CreditInfoComponent from "@/components/CreditInfo/CreditInfo";
 
 interface ICashMethod {
   method: "cash";
@@ -34,8 +39,8 @@ export default function TicketLost() {
   const router = useRouter();
   const params = useSearchParams();
   const sectionRef = useRef<HTMLDivElement | null>(null);
-
-  const { token, handleToast, setLoadingGlobal } = useAuth();
+  const { hasCredit, creditInfo, userCredits } = useSelector((state:RootState) => state.creditInfo);
+  const { token, handleToast, setLoadingGlobal, userType} = useAuth();
 
   const ticketPaymentAmount = 300;
 
@@ -75,6 +80,15 @@ export default function TicketLost() {
 
   const [ticketInfo, setTicketInfo] = useState<TicketProps | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
+  const [fromDate, setFromDate] = useState<string>(
+    new Date().toISOString().split("T")[0],
+  );
+  const [toDate, setToDate] = useState<string>(
+    new Date().toISOString().split("T")[0],
+  );
+
+  const [displayTicketList, setShouldDisplayTickeList] = useState(false);
+  const [ticketList, setTicketList] = useState<ITicket | null>(null);
 
   useEffect(() => {
     const locId = params.get("locationId");
@@ -85,6 +99,11 @@ export default function TicketLost() {
     }
   }, []);
 
+  useEffect(() => {
+      if (userType === 'operador') {
+        if (!hasCredit) router.replace('/ticketPayment')
+      }
+  }, [])
   const scrollToSection = () => {
     sectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -128,7 +147,6 @@ export default function TicketLost() {
     bankMethod,
   ]);
 
-  console.log(canSubmit);
   // ========= handlers =========
   const handleSubmit = async () => {
     const dataPayment = [
@@ -228,9 +246,99 @@ export default function TicketLost() {
       )
     );
   };
+  const dateDataRow = () => {
+    return (
+      <div className="financial-content-body">
+        <div className="row">
+          <label>Buscar por fecha</label>
+          <div className="content-row">
+            <div className="input-dates-row">
+              <div className="date-form-input">
+                <label htmlFor="">Desde:</label>
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                />
+              </div>
+              <div className="date-form-input">
+                <label htmlFor="">Hasta:</label>
+                <input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                />
+              </div>
+              <button className="primary-button" onClick={() => {}}>
+                Buscar
+              </button>
+              <label htmlFor="">
+                {" "}
+                <b>Viendo Fecha desde: </b> {fromDate}
+              </label>
+              <label htmlFor="">
+                {" "}
+                <b>Viendo Fecha hasta: </b> {toDate}
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  const TicketsListConent = () => {
+    return (
+      <div className="form-container mt-5">
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <label className="header-title">Busqueda de ticket</label>
+          <button
+            className="trash-icon-container"
+            onClick={() => setShouldDisplayTickeList((prev) => !prev)}
+          >
+            {displayTicketList ? <ArrowUp /> : <ArrowRightIcon />}
+          </button>
+        </div>
+        {displayTicketList && (
+          <Fragment>
+            {dateDataRow()}
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th className="">Item</th>
+                    <th className="">Usuario</th>
+                    <th className="">Fecha de creacion</th>
+                    <th className="">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ticketList &&
+                  Array.isArray(ticketList) &&
+                  ticketList.length !== 0 ? (
+                    ticketList.map((item, index) => (
+                      <tr key={index}>
+                        <td>{index + 1}</td>
+                        <td>{item.name}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4}>Sin datos</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Fragment>
+        )}
+      </div>
+    );
+  };
   return (
     <div ref={sectionRef}>
       {PDFViewerComponent()}
+ { userType == 'operador' &&     <CreditInfoComponent />}
+          
       <h1 className="main-header">Boleto perdido</h1>
 
       <div className="options-header">
@@ -403,6 +511,7 @@ export default function TicketLost() {
           )}
         </div>
       </div>
+      {/* {TicketsListConent()} */}
     </div>
   );
 }
