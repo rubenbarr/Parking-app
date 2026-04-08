@@ -11,14 +11,16 @@ import { PDFViewer } from "@react-pdf/renderer";
 import { ReciboTicketLost } from "@/components/ReciboTicketPermido/ReciboticketPerdido";
 import { ITicket } from "@/types/ticket";
 import { ArrowRightIcon, ArrowUp } from "lucide-react";
-import { useSelector } from "react-redux";
-import { RootState } from "@/store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store/store";
 import CreditInfoComponent from "@/components/CreditInfo/CreditInfo";
+import { fetchCreditInfo } from "@/store/slices/creditSlice";
 
 interface ICashMethod {
   method: "cash";
   montoPagado: number;
   totalPayed: number;
+  change: number;
 }
 
 interface IBankMethod {
@@ -38,10 +40,17 @@ interface TicketProps {
 export default function TicketLost() {
   const router = useRouter();
   const params = useSearchParams();
+  const dispatch  = useDispatch<AppDispatch>();
   const sectionRef = useRef<HTMLDivElement | null>(null);
-  const { hasCredit, creditInfo, userCredits } = useSelector((state:RootState) => state.creditInfo);
+  const { hasCredit, creditInfo, hasFetched } = useSelector((state:RootState) => state.creditInfo);
   const { token, handleToast, setLoadingGlobal, userType} = useAuth();
 
+  function getPersonalCreditInfo() {
+      setLoadingGlobal(true);
+      dispatch(fetchCreditInfo({ token: token as string, shouldRequestClosedCredit: true }))
+        .unwrap()
+        .finally(() => setLoadingGlobal(false));
+    }
   const ticketPaymentAmount = 300;
 
   const [userInfo, setUserInfo] = useState({
@@ -54,6 +63,7 @@ export default function TicketLost() {
     method: "cash",
     montoPagado: 0,
     totalPayed: 0,
+    change: 0
   });
 
   const [bankMethod, setBankMethod] = useState<IBankMethod>({
@@ -71,6 +81,7 @@ export default function TicketLost() {
     method: "cash",
     montoPagado: 0,
     totalPayed: 0,
+    change:0
   };
   const initialBankMethod = {
     method: "",
@@ -99,11 +110,8 @@ export default function TicketLost() {
     }
   }, []);
 
-  useEffect(() => {
-      if (userType === 'operador') {
-        if (!hasCredit) router.replace('/ticketPayment')
-      }
-  }, [])
+
+
   const scrollToSection = () => {
     sectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -136,7 +144,6 @@ export default function TicketLost() {
       validUserInfo &&
       totalRemaining === 0 &&
       !invalidCash &&
-      cashMethod.montoPagado === cashMethod.totalPayed &&
       validBankInfo
     );
   }, [
@@ -149,15 +156,20 @@ export default function TicketLost() {
 
   // ========= handlers =========
   const handleSubmit = async () => {
-    const dataPayment = [
-      ...(Object.values(bankMethod).every(Boolean) ? [bankMethod] : []),
-      ...(Object.values(cashMethod).every(Boolean) ? [cashMethod] : []),
-    ];
 
+    const paymentInfo = [];
+    if(Object.values(cashMethod).every(i => i !=="")) {
+      paymentInfo.push(cashMethod)
+    }
+
+    if(Object.values(bankMethod).every(i => i !=="")) {
+      paymentInfo.push(bankMethod)
+    }
+    
     const payload = {
       amount: ticketPaymentAmount,
       totalPayed: ticketPaymentAmount,
-      dataPayment,
+      dataPayment: paymentInfo,
       userInfo,
     };
 
@@ -177,7 +189,7 @@ export default function TicketLost() {
         locationId as string,
         payload,
       )) as Response;
-      console.log(req);
+
       if (!req.state) {
         return handleToast(
           "error",
@@ -190,6 +202,7 @@ export default function TicketLost() {
       setTicketInfo(ticket);
       handleToast("success", "Ticket perdido creado correctamente");
       scrollToSection();
+      getPersonalCreditInfo();
     } catch (error) {
       handleToast(
         "error",
@@ -223,7 +236,7 @@ export default function TicketLost() {
 
   const updateBank = (field: keyof IBankMethod, value: string | number) => {
     if (field === "method" && value === "") {
-      setBankMethod((prev) => ({ ...prev, montoPagado: 0 }));
+      setBankMethod((prev) => ({ ...prev, montoPagado: 0, reference: "" }));
     }
     if (field === "montoPagado") {
       setBankMethod((prev) => ({
@@ -334,12 +347,22 @@ export default function TicketLost() {
       </div>
     );
   };
+
+  const shouldDisplayForm = () =>{
+    if(userType === 'global-admin') {
+      return true
+    }
+    if(userType === 'operador') {
+      return hasCredit
+    }
+  }
   return (
     <div ref={sectionRef}>
       {PDFViewerComponent()}
- { userType == 'operador' &&     <CreditInfoComponent />}
-          
       <h1 className="main-header">Boleto perdido</h1>
+ { userType == 'operador' &&     <CreditInfoComponent />}
+      {shouldDisplayForm() && 
+      <Fragment>
 
       <div className="options-header">
         <a className="content-action" onClick={() => router.back()}>
@@ -509,8 +532,10 @@ export default function TicketLost() {
               Generar nuevo
             </button>
           )}
-        </div>
+        </div> 
       </div>
+      </Fragment>
+  }
       {/* {TicketsListConent()} */}
     </div>
   );
