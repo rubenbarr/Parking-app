@@ -16,11 +16,15 @@ type Params = {
 
 type LocationDataType = {
    "_id": number;
-        "totalCarsIn": number;
-        "totalOut": number;
-        "totalPaid": number;
-        "totalPayed": number;
-        "totalTickets": number;
+    totalCarsIn: number;
+    totalCash: number;
+    totalOut: number;
+    totalPaid: number;
+    totalPayed: number;
+    totalTerminal: number;
+    totalTerminalTransfer: number;
+    totalTickets: number;
+    totalTransfer: number;
 }
 
 export interface LocationInfo {

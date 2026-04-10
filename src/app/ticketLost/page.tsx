@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Response } from "@/api/usersApi";
 import { PDFViewer } from "@react-pdf/renderer";
 import { ReciboTicketLost } from "@/components/ReciboTicketPermido/ReciboticketPerdido";
-import { ITicket } from "@/types/ticket";
+import { IBankMethod, ITicket } from "@/types/ticket";
 import { ArrowRightIcon, ArrowUp } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
@@ -23,11 +23,6 @@ interface ICashMethod {
   change: number;
 }
 
-interface IBankMethod {
-  method: string;
-  montoPagado: number;
-  reference: string;
-}
 
 interface TicketProps {
   ticketId: string;

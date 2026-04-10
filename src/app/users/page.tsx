@@ -449,8 +449,6 @@ export default function Users() {
       permissions.push("validations");
     }
 
-    console.log(permissions);
-
     const newData = {
       ...data,
       location: newLocations,

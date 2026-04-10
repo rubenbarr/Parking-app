@@ -63,10 +63,10 @@ export default function Page() {
   const [currentDate, setCurrenDate] = useState(new Date().toLocaleString());
   const [locationId, setLocationId] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("Z")[0]
   );
   const [toDate, setToDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
+   new Date().toISOString().split("Z")[0]
   );
   const [ticketsPage, setTicketsPage] = useState(1);
   const [ticketsLimit, setTicketsLimit] = useState(100);
@@ -731,12 +731,11 @@ export default function Page() {
           <div className="financial-content-body">
             <div className="row">
               <label>Buscar por fecha</label>
-              <div className="content-row">
-                <div className="input-dates-row">
+                <div className="input-dates-row col-3">
                   <div className="date-form-input">
                     <label htmlFor="">Desde:</label>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={fromDate}
                       onChange={(e) => setFromDate(e.target.value)}
                     />
@@ -744,7 +743,7 @@ export default function Page() {
                   <div className="date-form-input">
                     <label htmlFor="">Hasta:</label>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={toDate}
                       onChange={(e) => setToDate(e.target.value)}
                     />
@@ -770,7 +769,6 @@ export default function Page() {
                     <b>Viendo Fecha hasta: </b> {toDate}
                   </label>
                 </div>
-              </div>
             </div>
             <div className="row">
               <b>Información financiera</b>
@@ -787,6 +785,20 @@ export default function Page() {
                   {data?.totalPaid
                     ? transformToCurrency(data.totalPaid)
                     : transformToCurrency(0)}
+                </label>
+              </div>
+            </div>
+            <div className="row">
+              <b>Metodos de pago</b>
+              <div className="content-row">
+                <label>
+                  <b>{"total pagado en efectivo: "}</b> {transformToCurrency(data?.totalCash ?? 0 )}
+                </label>
+                <label>
+                  <b>{"total pagado en terminal: "}</b> {transformToCurrency(data?.totalTerminal ?? 0 )}
+                </label>
+                <label>
+                  <b>{"total pagado en transferencia: "}</b> {transformToCurrency(data?.totalTransfer ?? 0 )}
                 </label>
               </div>
             </div>
@@ -808,7 +820,7 @@ export default function Page() {
               <b>Historial de boton de barrera de salida</b>
               <div className="content-row">
                 <label>
-                  <b>{"Total de conteo: "}</b> {barrierSummary?.total}
+                  <b>{"Total de conteo: "}</b> {barrierSummary?.total ?? 0}
                 </label>
               </div>
             </div>

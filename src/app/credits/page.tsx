@@ -392,7 +392,8 @@ export default function Page() {
     const deliverAmount = closeCreditInfo?.credit_delivered
       ? parseFloat(closeCreditInfo?.credit_delivered as string)
       : 0;
-    const finalAmount = creditInfo?.finalAmount;
+
+    const finalAmount = creditInfo?.finalAmount || creditInfo?.creditUsed || 0;
     const sFinalAmount = new String(finalAmount)
       .replace("$", "")
       .replace(",", "");
@@ -400,10 +401,23 @@ export default function Page() {
       .replace("$", "")
       .replace(",","")
 
-    
     if (closeCreditInfo?.credit_delivered === "") return setShouldDisplayWarningTextAmount(false);
     else {
       if(creditInfo.status === 'cerrado') {
+        if (deliverAmount > parseInt(sFinalAmount)) {
+          setAmountWarningText("La cantidad recibida es mayor");
+          setCloseCreditInfo((prev) => ({ ...prev, closed_status: "exceso pago" }));
+        } else if (deliverAmount < parseInt(sFinalAmount)) {
+          setCloseCreditInfo((prev) => ({ ...prev, closed_status: "incompleto" }));
+          setAmountWarningText("La cantidad recibida es menor, incompleto.");
+        } else if (deliverAmount === parseInt(sFinalAmount)) {
+          setCloseCreditInfo((prev) => ({ ...prev, closed_status: "completo" }));
+        }
+        setShouldDisplayWarningTextAmount(
+          deliverAmount > parseFloat(sFinalAmount) ||
+          deliverAmount < parseFloat(sFinalAmount),
+        );
+      } else {
         if (deliverAmount > parseFloat(sFinalAmount)) {
           setAmountWarningText("La cantidad recibida es mayor");
           setCloseCreditInfo((prev) => ({ ...prev, closed_status: "exceso pago" }));
@@ -414,22 +428,8 @@ export default function Page() {
           setCloseCreditInfo((prev) => ({ ...prev, closed_status: "completo" }));
         }
         setShouldDisplayWarningTextAmount(
-          deliverAmount > parseFloat(sFinalAmount) ||
-          deliverAmount < parseFloat(sFinalAmount),
-        );
-      } else {
-        if (deliverAmount > parseFloat(sCurrentCreditUsed)) {
-          setAmountWarningText("La cantidad recibida es mayor");
-          setCloseCreditInfo((prev) => ({ ...prev, closed_status: "exceso pago" }));
-        } else if (deliverAmount < parseFloat(sCurrentCreditUsed)) {
-          setCloseCreditInfo((prev) => ({ ...prev, closed_status: "incompleto" }));
-          setAmountWarningText("La cantidad recibida es menor, incompleto.");
-        } else if (deliverAmount === parseFloat(sCurrentCreditUsed)) {
-          setCloseCreditInfo((prev) => ({ ...prev, closed_status: "completo" }));
-        }
-        setShouldDisplayWarningTextAmount(
-        deliverAmount > parseFloat(sCurrentCreditUsed) ||
-        deliverAmount < parseFloat(sCurrentCreditUsed),
+        deliverAmount > parseFloat(sFinalAmount) ||
+        deliverAmount < parseFloat(sFinalAmount),
         );
       }
     }

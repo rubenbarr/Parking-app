@@ -66,3 +66,9 @@ export interface ITicket {
   global_time_in: number
   paidBy:string;
 }
+
+export interface  IBankMethod {
+  method: string;
+  montoPagado: number;
+  reference: string;
+}

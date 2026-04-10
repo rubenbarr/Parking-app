@@ -3,7 +3,7 @@
 
 import "./payticketlocation.scss";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getLocationById } from "@/api/locationApi";
@@ -16,7 +16,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
 import CreditInfoComponent from "@/components/CreditInfo/CreditInfo";
 import { fetchCreditInfo } from "@/store/slices/creditSlice";
-import { ITicket } from "@/types/ticket";
+import { IBankMethod, ITicket } from "@/types/ticket";
 import { PDFViewer } from "@react-pdf/renderer";
 import TicketPDF from "@/components/ReciboTicketPdf/Reciboticket";
 import ButtonOpenBarrier from "@/components/OpenBarrier/ButtonOpenBarrier";
@@ -78,6 +78,12 @@ export default function PayTicketInLocation() {
     totalBills: 0,
     totalCoins: 0,
   };
+
+  const initiaBankStatement = {
+    method: "",
+    montoPagado: 0,
+    reference: "",
+  };
   const [locationInfo, setLocationInfo] = useState<ILocation | null>(null);
   const [locationId, setLocationId] = useState<string | null>(null);
   const [ticketId, setTicketId] = useState<string>("");
@@ -99,6 +105,12 @@ export default function PayTicketInLocation() {
   const [error, setError] = useState<string | null>(null);
   const [shouldDisplayQrReader, setshouldDisplayQrReader] = useState(false);
   const [qrResult, setQrResult] = useState("");
+
+  const [bankMethod, setBankMethod] = useState<IBankMethod>({
+    method: "",
+    montoPagado: 0,
+    reference: "",
+  });
 
   const qrRef = useRef<HTMLDivElement>(null);
   const qrInstance = useRef<Html5Qrcode>(null);
@@ -201,6 +213,20 @@ export default function PayTicketInLocation() {
     },
   });
 
+  const updateBank = (field: keyof IBankMethod, value: string | number) => {
+    if (field === "method" && value === "") {
+      setBankMethod((prev) => ({ ...prev, montoPagado: 0, reference: "" }));
+    }
+    if (field === "montoPagado") {
+      setBankMethod((prev) => ({
+        ...prev,
+        [field]: value === "" ? 0 : parseFloat(value as string),
+      }));
+    } else {
+      setBankMethod((prev) => ({ ...prev, [field]: value }));
+    }
+  };
+
   async function getLocationInfo(locationId: string) {
     try {
       setLoadingGlobal(true);
@@ -256,14 +282,53 @@ export default function PayTicketInLocation() {
     }
   }
 
+  const hasCashPayment = useMemo(() => {
+    const totalBills =
+      Object.entries(payment["bills"]).reduce(
+        (acc, [currency, total]) => acc + Number(currency) * total,
+        0,
+      ) || 0;
+    const totalCoins =
+      Object.entries(payment["coins"]).reduce(
+        (acc, [currency, total]) => acc + Number(currency) * total,
+        0,
+      ) || 0;
+
+    const totalPayed = totalBills + totalCoins;
+    return totalPayed > 0;
+  }, [payment]);
+
+  const transformPaymentPayload = () => {
+    const paymentData = [];
+    if (hasCashPayment) {
+      const cashPayload = {
+        method: "cash",
+        montoPagado: paymentState.totalPayed,
+        totalPayed:paymentState.totalPayed,
+        paymentData: payment,
+      };
+      paymentData.push(cashPayload);
+    }
+    if (
+      bankMethod.method !== "" &&
+      bankMethod.montoPagado > 0 &&
+      bankMethod.reference !== ""
+    ) {
+      paymentData.push(bankMethod);
+    }
+    const payload = {
+      amount: ticketInfo?.total_a_pagar,
+      paymentData: paymentData,
+      totalPayed: paymentState.totalPayed,
+      change: TotalChange,
+    };
+    return payload;
+  };
+
   async function payTicketRequest() {
     if (!canSubmitPayment) return;
-    const data = {
-      amount: ticketInfo?.total_a_pagar,
-      paymentData: payment,
-      totalPayed: paymentState.totalPayed,
-      change: paymentState.totalPayed - (ticketInfo?.total_a_pagar as number),
-    };
+
+    const payload = transformPaymentPayload();
     setCanSubmitPayment(false);
     setLoadingGlobal(true);
     setTicketId("");
@@ -274,7 +339,7 @@ export default function PayTicketInLocation() {
       const req = (await payTicket(
         token as string,
         ticketInfo?.ticketId as string,
-        data,
+        payload,
       )) as Response;
       if (!req.state) {
         setCanOpenBarrier(false);
@@ -287,14 +352,13 @@ export default function PayTicketInLocation() {
       refreshCredit();
       setCanOpenBarrier(true);
       getTicketInfo();
+      setBankMethod(initiaBankStatement);
     } catch (error: any) {
       handleToast(
         "error",
         error?.message || "Hubo un error, intente más tarde",
       );
     } finally {
-      setShouldDisplayTicketInfo(false);
-      setCanSubmitPayment(true);
       setLoadingGlobal(false);
       refreshCredit();
     }
@@ -348,6 +412,26 @@ export default function PayTicketInLocation() {
     currency: "USD",
   });
 
+  const totalRemaining = useMemo(() => {
+    const totalCashPaid = paymentState.totalPayed;
+    const totalBankPaid = bankMethod.montoPagado ? bankMethod.montoPagado : 0;
+    const totalToPaid = ticketInfo?.total_a_pagar ?? 0;
+    const totalPaid = totalCashPaid + totalBankPaid;
+    const remaining = totalToPaid - totalPaid;
+
+    return remaining >= 0 ? remaining : 0;
+  }, [paymentState, bankMethod, ticketInfo]);
+
+  const TotalChange = useMemo(() => {
+    const totalCashPaid = paymentState.totalPayed;
+    const totalBankPaid = bankMethod.montoPagado ? bankMethod.montoPagado : 0;
+    const totalToPaid = ticketInfo?.total_a_pagar ?? 0;
+    const totalPaid = totalCashPaid + totalBankPaid;
+
+    const change = totalPaid - totalToPaid;
+    return change > 0 ? change : 0;
+  }, [paymentState, bankMethod, ticketInfo]);
+
   const transformToCurrency = (value: number) => formatToCurrency.format(value);
 
   const transformDate = (date: string) => {
@@ -364,6 +448,27 @@ export default function PayTicketInLocation() {
     return newDate;
   };
 
+  const globalTotalPaid = useMemo(() => {
+    const totalPaidBank = bankMethod.montoPagado ? bankMethod.montoPagado : 0;
+    return paymentState.totalPayed + totalPaidBank;
+  }, [bankMethod, payment.bills, payment.coins, paymentState]);
+
+  const validBankPayment = useMemo(() => {
+    if (
+      bankMethod.method === "" &&
+      bankMethod.montoPagado === 0 &&
+      bankMethod.reference === ""
+    )
+      return true;
+    if (
+      bankMethod.method !== "" &&
+      bankMethod.montoPagado > 0 &&
+      bankMethod.reference !== ""
+    )
+      return true;
+    return false;
+  }, [bankMethod]);
+
   const totalPay = () => {
     const totalBills =
       Object.entries(payment["bills"]).reduce(
@@ -377,10 +482,15 @@ export default function PayTicketInLocation() {
       ) || 0;
 
     const totalPayed = totalBills + totalCoins;
+    const totalPaidBank = bankMethod.montoPagado ? bankMethod.montoPagado : 0;
     setPaymentState({ totalPayed, totalBills, totalCoins });
+    const totalPaid = totalBills + totalCoins + totalPaidBank;
+
     setCanSubmitPayment(
-      totalBills + totalCoins > 0 &&
-        totalBills + totalCoins >= (ticketInfo?.total_a_pagar as number),
+      totalPaid > 0 &&
+        totalBills + totalCoins + globalTotalPaid >=
+          (ticketInfo?.total_a_pagar as number) &&
+        validBankPayment,
     );
   };
 
@@ -413,6 +523,53 @@ export default function PayTicketInLocation() {
     }
   };
 
+  const bankMethodOptions = () => {
+    return (
+      <div>
+        <b className="section-title">Pago digital</b>
+
+        <div className="input-container">
+          <div className="input-form">
+            <label>Metodo</label>
+            <select
+              value={bankMethod.method}
+              onChange={(e) => updateBank("method", e.target.value)}
+            >
+              <option value="">Seleccionar</option>
+              <option value="terminal">Terminal</option>
+              <option value="transfer">Transferencia</option>
+            </select>
+          </div>
+
+          <div className="input-form">
+            <label>Monto</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              min={0}
+              value={bankMethod.montoPagado}
+              onChange={(e) => updateBank("montoPagado", e.target.value)}
+              disabled={!bankMethod.method}
+            />
+          </div>
+
+          <div className="input-form">
+            <label>Referencia</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              min={0}
+              value={bankMethod.reference}
+              onChange={(e) => updateBank("reference", e.target.value)}
+              disabled={!bankMethod.method}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
   const payTicketActions = () => {
     return (
       shouldDisplayTicketInfo &&
@@ -431,32 +588,15 @@ export default function PayTicketInLocation() {
               </label>
               <label>
                 <b>Total pagado: </b>
-                {transformToCurrency(paymentState.totalPayed)}
+                {transformToCurrency(globalTotalPaid)}
               </label>
               <label>
                 <b>Total Restante: </b>
-                {ticketInfo?.total_a_pagar &&
-                paymentState.totalPayed <= ticketInfo.total_a_pagar
-                  ? transformToCurrency(
-                      ticketInfo?.total_a_pagar - paymentState.totalPayed,
-                    )
-                  : 0}
+                {transformToCurrency(totalRemaining)}
               </label>
-              <label
-                className={cn([
-                  ticketInfo?.total_a_pagar &&
-                    paymentState.totalPayed - ticketInfo?.total_a_pagar > 0 &&
-                    "alarm informative",
-                ])}
-              >
+              <label className={cn([TotalChange > 0 && "alarm informative"])}>
                 <b>Cambio: </b>
-                {ticketInfo?.total_a_pagar &&
-                paymentState.totalPayed > 0 &&
-                paymentState.totalPayed > ticketInfo.total_a_pagar
-                  ? transformToCurrency(
-                      paymentState.totalPayed - ticketInfo?.total_a_pagar,
-                    )
-                  : transformToCurrency(0)}
+                {transformToCurrency(TotalChange)}
               </label>
             </div>
           </div>
@@ -712,6 +852,7 @@ export default function PayTicketInLocation() {
               </div>
             </div>
           </div>
+          {bankMethodOptions()}
           {buttonValidationCase()}
         </div>
       )
@@ -859,7 +1000,7 @@ export default function PayTicketInLocation() {
 
   useEffect(() => {
     totalPay();
-  }, [payment]);
+  }, [bankMethod, payment.bills, payment.coins]);
 
   useEffect(() => {
     if (!isLoading && !hasCredit && hasFetched) {
@@ -940,7 +1081,10 @@ export default function PayTicketInLocation() {
   const PDFViewerComponent = () => {
     return (
       displayPdfViewe && (
-        <PDFViewer  key={JSON.stringify(ticketInfo)} style={{ width: "100%", height: "40vh" }}>
+        <PDFViewer
+          key={JSON.stringify(ticketInfo)}
+          style={{ width: "100%", height: "40vh" }}
+        >
           <TicketPDF
             ticket={ticketInfo as ITicket}
             locationTitle={locationInfo?.title as string}
@@ -1026,12 +1170,8 @@ export default function PayTicketInLocation() {
         {PDFViewerComponent()}
         <div
           style={{
-            position: "sticky",
-            top: 0,
+            position: "relative",
             background: "white",
-            zIndex: 1,
-            margin: 0,
-            padding: 0,
           }}
         >
           <CreditInfoComponent />

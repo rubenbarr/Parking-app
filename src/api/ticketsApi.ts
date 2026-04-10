@@ -98,9 +98,11 @@ export async function getTicketsFromLocation(
   fromDate: string,
   toDate: string,
 ) {
+  const OLD_RESOURSCE = 'getTickets';
+  const NEW_RESOURSE = 'getTicketsDateTime'
   try {
     const req = await fetchWithTimeout(
-      `${LOCALHOST}/api/ticketRoute/getTickets?locationId=${locationId}&page=${page}&limit=${limit}&dateFrom=${fromDate}&dateTo=${toDate}`,
+      `${LOCALHOST}/api/ticketRoute/${NEW_RESOURSE}?locationId=${locationId}&page=${page}&limit=${limit}&dateFrom=${fromDate}&dateTo=${toDate}`,
       {
         method: GET,
         headers: { ...headers(token) },
@@ -119,9 +121,11 @@ export async function getFinancialData(
   fromDate: string,
   toDate: string,
 ) {
+  const OLD_RESOURSCE = 'getLocationsData';
+  const NEW_RESOURSE = 'getLocationsDataNew'
   try {
     const req = await fetchWithTimeout(
-      `${LOCALHOST}/api/indicators_route/getLocationsData/${locationId}?fromDate=${fromDate}&toDate=${toDate}`,
+      `${LOCALHOST}/api/indicators_route/${NEW_RESOURSE}/${locationId}?fromDate=${fromDate}&toDate=${toDate}`,
       {
         method: GET,
         headers: { ...headers(token) },
