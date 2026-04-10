@@ -1122,7 +1122,7 @@ const printActionButtons = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="">
+                    <td colSpan={11} className="">
                       Sin datos
                     </td>
                   </tr>

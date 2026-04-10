@@ -35,7 +35,7 @@ export const OperatorCreditPdf = (props: TicketProps) => {
   return (
     creditInfo && (
       <Document ref={props.ref}>
-        <Page size={[155, 265]} style={styles.page}>
+        <Page size={[155, 290]} style={styles.page}>
           <View style={styles.section}>
             <View
               style={{
@@ -52,10 +52,14 @@ export const OperatorCreditPdf = (props: TicketProps) => {
               <Text>{new Date().toLocaleString("es-MX")}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.label}>fecha de creacion de credito: </Text>
+              <Text style={styles.label}>fecha de creacion: </Text>
               <Text>
                 {new Date(creditInfo.createdAt).toLocaleString("es-MX")}
               </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Operador: </Text>
+              <Text>{creditInfo.operator}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.label}>Creado por: </Text>

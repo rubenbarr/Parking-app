@@ -17,4 +17,5 @@ export interface ICredit {
   initial_change: number;
   current_change: number;
   change_delivered: number;
+  operator:string;
 }
