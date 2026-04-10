@@ -555,7 +555,7 @@ export default function PayTicketInLocation() {
           </div>
 
           <div className="input-form">
-            <label>Referencia</label>
+            <label>Autorizacion</label>
             <input
               type="text"
               inputMode="numeric"
@@ -1142,7 +1142,7 @@ export default function PayTicketInLocation() {
               className="filter-input"
               value={ticketId}
               onChange={(e) => {
-                const formattedValue = e.target.value.replace(/'/g, "-");
+                const formattedValue = e.target.value.replace(/'/g, "-").toLocaleLowerCase();
                 setTicketId(formattedValue);
               }}
             />
