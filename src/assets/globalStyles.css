@@ -284,7 +284,18 @@ table {
   border-radius: 10px;
   width: 100%;
   border-radius: 10px;
+  thead {
+    background-color: #f8f8f8;
+    cursor: pointer;
 
+    position: sticky;
+    top: 0;
+    z-index: 10; 
+  }
+
+  th {
+    background-color: #f8f8f8;
+  }
   th,
   td {
     width: 180px;
