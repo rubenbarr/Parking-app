@@ -9,17 +9,19 @@ import {
   cancelCreditRequest,
   closeCreditRequest,
   getCreditById,
+  getCreditFinancialData,
   getCreditsPaginated,
   getOperatorsReqPaginated,
 } from "@/api/credits";
 import { Response } from "@/api/usersApi";
 import { transformDate, transformToCurrency } from "@/assets/utils";
 import { UserTemplate } from "@/types/user";
-import "./creditsStyle.scss";
 import { PDFViewer } from "@react-pdf/renderer";
 import OperatorCreditPdf from "@/components/ReciboCreditoOperador/Reciboticket";
-import { ICredit } from "@/types/credits";
 import { PrinterIcon } from "lucide-react";
+import type { CreditFinancialInfo, ICredit } from "@/types/credits";
+
+import "./creditsStyle.scss";
 
 interface CreditList {
   createdAt: string;
@@ -38,6 +40,8 @@ interface CreditList {
   current_change ?: number | null;
   change_delivered ? : number | null;
 }
+
+
 
 interface IOperator {
   userId: string;
@@ -68,6 +72,15 @@ export default function Page() {
     updatedAt: "",
     userId: "",
     creditCharged: null,
+  };
+  const initialFinancialData = {
+        totalCash: 0,
+        totalPaid: 0,
+        totalPayed: 0,
+        totalTerminal: 0,
+        totalTerminalTransfer: 0,
+        totalTickets: 0,
+        totalTransfer: 0,
   };
 
   const initialCreditCloseInfo = {
@@ -101,6 +114,7 @@ export default function Page() {
     [],
   );
   const [creditInfo, setCreditInfo] = useState<CreditList>(initialCreditInfo);
+  const [creditFinancialInfo, setCreditFinancialInfo] = useState<CreditFinancialInfo>(initialFinancialData);
   const [creditsPage, setCreditsPage] = useState(1);
   const [creditsLimit, setCreditsLimit] = useState(20);
   const [shouldDisplayCreditInfo, setShouldDisplayCreditInfo] = useState({
@@ -189,6 +203,28 @@ export default function Page() {
         const creditInfoData = data[0] as any;
         addCloseCreditInfo(creditInfoData, data[0].status);
         handleShouldDisplayCreditInfo("show", true);
+      } else {
+        setIsEdit(false);
+        handleShouldDisplayCreditInfo("hide", false);
+        router.replace("/credits");
+      }
+    } catch (error) {
+      setIsEdit(false);
+      handleShouldDisplayCreditInfo("hide", false);
+      router.replace("/credits");
+    } finally {
+      setLoadingGlobal(false);
+    }
+  }
+  async function getCreditFinancialDataReq(creditId: string) {
+
+    try {
+      setLoadingGlobal(true);
+      const req = (await getCreditFinancialData(creditId, token as string)) as Response;
+      if (req.state) {
+        const data = req.data as CreditFinancialInfo;
+        setCreditFinancialInfo(data);
+
       } else {
         setIsEdit(false);
         handleShouldDisplayCreditInfo("hide", false);
@@ -517,6 +553,7 @@ export default function Page() {
     if (requestId) {
       getCreditInfo(requestId);
       setCreditId(requestId);
+      getCreditFinancialDataReq(requestId);
     } else {
       setIsEdit(false);
       handleShouldDisplayCreditInfo("hide", false);
@@ -959,6 +996,7 @@ const PDFViewerComponent = () => {
       <PDFViewer style={{ width: "100%", height: "50vh" }}>
         <OperatorCreditPdf
           creditInfo={creditInfo as any}
+          financialInfo={creditFinancialInfo}
         />
       </PDFViewer>
     )
@@ -1075,6 +1113,7 @@ const printActionButtons = () => {
                       onClick={() => {
                         handleRouter(item.requestId);
                         getCreditInfo(item.requestId);
+                        getCreditFinancialDataReq(item.requestId);
                         // setIsEdit(true);
                         // setCreditInfo({
                         //   ...item,

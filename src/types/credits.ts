@@ -19,3 +19,14 @@ export interface ICredit {
   change_delivered: number;
   operator:string;
 }
+
+
+export interface CreditFinancialInfo {
+        totalCash: number;
+        totalPaid: number;
+        totalPayed: number;
+        totalTerminal: number;
+        totalTerminalTransfer: number;
+        totalTickets: number;
+        totalTransfer: number;
+}

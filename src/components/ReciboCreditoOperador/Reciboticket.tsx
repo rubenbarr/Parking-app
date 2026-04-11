@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from "react";
+import React, { Fragment } from "react";
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 import { transformToCurrency } from "@/assets/utils";
-import { ICredit } from "@/types/credits";
+
+import type { CreditFinancialInfo, ICredit } from "@/types/credits";
+
 const styles = StyleSheet.create({
   page: {
     padding: 10,
@@ -23,19 +25,42 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-
 interface TicketProps {
   creditInfo?: ICredit;
   ref?: any;
+  financialInfo?: CreditFinancialInfo
 }
 
 export const OperatorCreditPdf = (props: TicketProps) => {
-  const { creditInfo } = props;
+  const { creditInfo, financialInfo } = props;
+  const height = financialInfo ? 400: 290;
 
+  const financialDataContent = () => {
+    return (
+      <Fragment>
+        <View style={styles.infoRow}>
+              <Text style={styles.label}>Tickets Pagados: </Text>
+              <Text>{financialInfo?.totalTickets}</Text>
+        </View>
+        <View style={styles.infoRow}>
+              <Text style={styles.label}>Pagado en efectivo: </Text>
+              <Text>{transformToCurrency(financialInfo?.totalCash ?? 0)}</Text>
+        </View>
+        <View style={styles.infoRow}>
+              <Text style={styles.label}>Pagado en terminal: </Text>
+              <Text>{transformToCurrency(financialInfo?.totalTerminal ?? 0)}</Text>
+        </View>
+        <View style={styles.infoRow}>
+              <Text style={styles.label}>Pagado en transferencia: </Text>
+              <Text>{transformToCurrency(financialInfo?.totalTransfer ?? 0)}</Text>
+        </View>
+      </Fragment>
+    )
+  }
   return (
     creditInfo && (
       <Document ref={props.ref}>
-        <Page size={[155, 290]} style={styles.page}>
+        <Page size={[155, height]} style={styles.page}>
           <View style={styles.section}>
             <View
               style={{
@@ -85,6 +110,7 @@ export const OperatorCreditPdf = (props: TicketProps) => {
               <Text style={styles.label}>cambio disponible: </Text>
               <Text>{transformToCurrency(creditInfo.current_change)}</Text>
             </View>
+            {financialInfo && financialDataContent()}
           </View>
         </Page>
       </Document>

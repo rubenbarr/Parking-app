@@ -47,6 +47,18 @@ export async function getCreditById(requestId:string, token:string){
         return error;
     }
 }
+export async function getCreditFinancialData(requestId:string, token:string){
+    if (!requestId) return
+    try {
+        const req = await fetchWithTimeout(`${LOCALHOST}/api/ticketRoute/getCreditFinancialData?creditId=${requestId}`, {
+            method: GET,
+            headers: headers(token), 
+        })
+        return req as Response;
+    } catch (error) {
+        return error;
+    }
+}
 
 export async function getOperatorsReqPaginated (page:number, limit:number, token:string){
     try {
