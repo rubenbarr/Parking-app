@@ -303,7 +303,7 @@ export default function PayTicketInLocation() {
     if (hasCashPayment) {
       const cashPayload = {
         method: "cash",
-        montoPagado: paymentState.totalPayed,
+        montoPagado: ticketInfo?.total_a_pagar ? ticketInfo.total_a_pagar - bankMethod.montoPagado : 0,
         totalPayed:paymentState.totalPayed,
         paymentData: payment,
       };
