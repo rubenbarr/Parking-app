@@ -24,9 +24,10 @@ import { ITicket } from "@/types/ticket";
 import { getTicketInfoById } from "@/api/ticketsApi";
 import { Response } from "@/api/usersApi";
 
-import "./locationInfoStyle.scss";
 import Toggle from "@/components/Toggle/ToggleComp";
 import { Html5Qrcode } from "html5-qrcode";
+
+import "./locationInfoStyle.scss";
 
 export default function Page() {
   const { isLoadingGlobal, setLoadingGlobal, token, handleToast } = useAuth();
@@ -59,17 +60,35 @@ export default function Page() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
+  const firstShift = ["07:00:00.00", "19:00:00.00"];
+  const SecondShift = ["19:00:00.00", "07:00:00.00"];
 
+  const shifts = {
+    '1erTurno': {
+      label: '1er Turno',
+      values: firstShift,
+      value: '1erTurno'
+    },
+    '2doTurno': {
+      label: '2do Turno',
+      values: SecondShift,
+      value: '2doTurno'
+    }
+  }
+  
+  const [shiftDate, setShiftDate] = useState(shifts['1erTurno']);
   const [currentDate, setCurrenDate] = useState(new Date().toLocaleString());
   const [locationId, setLocationId] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState<string>(
-    new Date().toISOString().split("Z")[0]
+    `${new Date().toISOString().split("Z")[0].split("T")[0]}T${firstShift[0]}`,
   );
   const [toDate, setToDate] = useState<string>(
-   new Date().toISOString().split("Z")[0]
+    `${new Date().toISOString().split("Z")[0].split("T")[0]}T${firstShift[1]}`,
   );
+  console.log(shiftDate)
   const [ticketsPage, setTicketsPage] = useState(1);
   const [ticketsLimit, setTicketsLimit] = useState(100);
+  const [field, setField] = useState("fechaEntrada");
   const [shouldDisplayOperatorsTable, setShouldDisplayOperatorsTable] =
     useState(false);
   const [shouldDisplayKioscoTable, setShouldDisplayKioscoTable] =
@@ -216,6 +235,7 @@ export default function Page() {
           limit: ticketsLimit,
           fromDate,
           toDate,
+          field,
         });
         dispatchBarrierSummary({
           token,
@@ -229,18 +249,24 @@ export default function Page() {
     } else router.replace("/locations");
   }, []);
 
-    useEffect(() => {
-      if (!result) return;
-  
-      const delayDebounce = setTimeout(() => {
-        if (result.length >= 32) {
-          setTicketId(result);
-          getTicketByIdReq(result)
-        }
-      }, 300); // wait 300ms after typing stops
-  
-      return () => clearTimeout(delayDebounce);
-    }, [result]);
+  useEffect(() => {
+    if (!result) return;
+
+    const delayDebounce = setTimeout(() => {
+      if (result.length >= 32) {
+        setTicketId(result);
+        getTicketByIdReq(result);
+      }
+    }, 300); // wait 300ms after typing stops
+
+    return () => clearTimeout(delayDebounce);
+  }, [result]);
+
+  useEffect(() => {
+    setFromDate(`${new Date().toISOString().split("Z")[0].split("T")[0]}T${shiftDate.values[0]}`);
+    setToDate(`${new Date().toISOString().split("Z")[0].split("T")[0]}T${shiftDate.values[1]}`)
+
+  }, [shiftDate])
 
   function getTickets() {
     if (!token || !locationId) return;
@@ -285,6 +311,7 @@ export default function Page() {
       limit: ticketsLimit,
       fromDate,
       toDate,
+      field,
     });
   }
 
@@ -406,7 +433,14 @@ export default function Page() {
   const autoValidationElement = () => {
     if (!scanning) {
       return (
-        <button className="primary-button" onClick={() => {startScanner(); setTicketId(""); setTicketInfo(null)}}>
+        <button
+          className="primary-button"
+          onClick={() => {
+            startScanner();
+            setTicketId("");
+            setTicketInfo(null);
+          }}
+        >
           Activar camara para buscar
         </button>
       );
@@ -431,10 +465,12 @@ export default function Page() {
       autoFind && (
         <>
           {autoValidationElement()}
-          {ticketId && <div className="">
-            <p>Ticket Id: </p>
-            <b>{ticketId !== "" && ticketId}</b>
-          </div>}
+          {ticketId && (
+            <div className="">
+              <p>Ticket Id: </p>
+              <b>{ticketId !== "" && ticketId}</b>
+            </div>
+          )}
           {qrReader()}
         </>
       )
@@ -556,7 +592,10 @@ export default function Page() {
                     </p>
                     <p className="info-content">
                       <b>{"Total pagado: "}</b>{" "}
-                      <label> {transformToCurrency(item?.montoPagado || 0)}</label>
+                      <label>
+                        {" "}
+                        {transformToCurrency(item?.montoPagado || 0)}
+                      </label>
                     </p>
                   </div>
                 ))}
@@ -724,6 +763,20 @@ export default function Page() {
           <div className="header-row">
             <label className="header-title">Datos Financieros</label>
           </div>
+          <div className="financial-content-body">
+            <label htmlFor="shift-select">
+              <b>Buscar por campo</b>
+            </label>
+            <select
+              value={shiftDate.value}
+              className="filter-input"
+              id="shift-select"
+              onChange={(e) => setShiftDate(shifts[e.target.value as '1erTurno' | '2doTurno']) }
+            >
+              <option value="1erTurno">1er Turno</option>
+              <option value="2doTurno">2do Turno</option>
+            </select>
+          </div>
           <label>
             {" "}
             <b>{"Fecha Actual: "}</b> {currentDate}
@@ -731,44 +784,60 @@ export default function Page() {
           <div className="financial-content-body">
             <div className="row">
               <label>Buscar por fecha</label>
-                <div className="input-dates-row col-3">
-                  <div className="date-form-input">
-                    <label htmlFor="">Desde:</label>
-                    <input
-                      type="datetime-local"
-                      value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                    />
-                  </div>
-                  <div className="date-form-input">
-                    <label htmlFor="">Hasta:</label>
-                    <input
-                      type="datetime-local"
-                      value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                    />
-                  </div>
-                  <button
-                    className="primary-button"
-                    onClick={() => {
-                      setTicketsPage(1);
-                      getTickets();
-                      getFinancialData();
-                      getBarrierSumReq();
-                      getBarrierlist();
-                    }}
-                  >
-                    Buscar
-                  </button>
-                  <label htmlFor="">
-                    {" "}
-                    <b>Viendo Fecha desde: </b> {fromDate}
-                  </label>
-                  <label htmlFor="">
-                    {" "}
-                    <b>Viendo Fecha hasta: </b> {toDate}
-                  </label>
+              <div className="input-dates-row col-3">
+                <div className="date-form-input">
+                  <label htmlFor="">Desde:</label>
+                  <input
+                    type="datetime-local"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                  />
                 </div>
+                <div className="date-form-input">
+                  <label htmlFor="">Hasta:</label>
+                  <input
+                    type="datetime-local"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                  />
+                </div>
+                <button
+                  className="primary-button"
+                  onClick={() => {
+                    setTicketsPage(1);
+                    getTickets();
+                    getFinancialData();
+                    getBarrierSumReq();
+                    getBarrierlist();
+                  }}
+                >
+                  Buscar
+                </button>
+                <label htmlFor="">
+                  {" "}
+                  <b>Viendo Fecha desde: </b> {fromDate}
+                </label>
+                <label htmlFor="">
+                  {" "}
+                  <b>Viendo Fecha hasta: </b> {toDate}
+                </label>
+              </div>
+            </div>
+            <div className="row">
+              <label htmlFor="">
+                <b>Buscar por campo</b>
+              </label>
+              <select
+                value={field}
+                className="filter-input"
+                onChange={(e) => {
+                  console.log(e.target.value);
+                  setField(e.target.value);
+                }}
+              >
+                <option value="fechaEntrada">Fecha de entrada</option>
+                <option value="fechaSalida">Fecha de salida</option>
+              </select>
             </div>
             <div className="row">
               <b>Información financiera</b>
@@ -792,13 +861,16 @@ export default function Page() {
               <b>Metodos de pago</b>
               <div className="content-row">
                 <label>
-                  <b>{"total pagado en efectivo: "}</b> {transformToCurrency(data?.totalCash ?? 0 )}
+                  <b>{"total pagado en efectivo: "}</b>{" "}
+                  {transformToCurrency(data?.totalCash ?? 0)}
                 </label>
                 <label>
-                  <b>{"total pagado en terminal: "}</b> {transformToCurrency(data?.totalTerminal ?? 0 )}
+                  <b>{"total pagado en terminal: "}</b>{" "}
+                  {transformToCurrency(data?.totalTerminal ?? 0)}
                 </label>
                 <label>
-                  <b>{"total pagado en transferencia: "}</b> {transformToCurrency(data?.totalTransfer ?? 0 )}
+                  <b>{"total pagado en transferencia: "}</b>{" "}
+                  {transformToCurrency(data?.totalTransfer ?? 0)}
                 </label>
               </div>
             </div>

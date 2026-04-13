@@ -120,12 +120,15 @@ export async function getFinancialData(
   locationId: string,
   fromDate: string,
   toDate: string,
+  field?:string
 ) {
   const OLD_RESOURSCE = 'getLocationsData';
   const NEW_RESOURSE = 'getLocationsDataNew'
+  const FIELD_QUERY =  field ? `&field=${field}` : '';
+
   try {
     const req = await fetchWithTimeout(
-      `${LOCALHOST}/api/indicators_route/${NEW_RESOURSE}/${locationId}?fromDate=${fromDate}&toDate=${toDate}`,
+      `${LOCALHOST}/api/indicators_route/${NEW_RESOURSE}/${locationId}?fromDate=${fromDate}&toDate=${toDate}${FIELD_QUERY}`,
       {
         method: GET,
         headers: { ...headers(token) },
