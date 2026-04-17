@@ -369,7 +369,7 @@ export default function PayTicketInLocation() {
       return;
     const data = {
       amount: 0,
-      paymentData: initialBillsCoinsInfo,
+      paymentData: [],
       totalPayed: 0,
       change: 0,
     };
