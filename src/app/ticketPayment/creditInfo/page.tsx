@@ -1,18 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
-import { getCreditById } from '@/api/credits';
+import { getCreditById, getCreditFinancialData } from '@/api/credits';
 import { getTicketsPayedByCredit } from '@/api/ticketsApi';
 import { Response } from '@/api/usersApi';
 import { transformToCurrency } from '@/assets/utils';
 import CreditInfoComponent from '@/components/CreditInfo/CreditInfo'
 import OperatorCreditPdf from '@/components/ReciboCreditoOperador/Reciboticket';
 import { useAuth } from '@/context/AuthContext';
-import { ICredit } from '@/types/credits';
+import { CreditFinancialInfo, ICredit } from '@/types/credits';
 import { IDataPayment, IPayment, ITicket } from '@/types/ticket';
 import { PDFViewer } from '@react-pdf/renderer';
 import { PrinterIcon } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation'
 import React, { useEffect, useState } from 'react'
+
+  const initialFinancialData = {
+        totalCash: 0,
+        totalPaid: 0,
+        totalPayed: 0,
+        totalTerminal: 0,
+        totalTerminalTransfer: 0,
+        totalTickets: 0,
+        totalTransfer: 0,
+  };
 
 export default function Page() {
   const router = useRouter();
@@ -29,6 +39,7 @@ export default function Page() {
   const [limit, setLimit] = useState<number>(10);
   const [creditId, setCreditId] = useState<string | null>( )
   const [creditInfo, setCreditInfo] = useState<ICredit>()
+  const [creditFinancialInfo, setCreditFinancialInfo] = useState<CreditFinancialInfo>(initialFinancialData);
   
   const getDate = (date: string) => {
     return new Date(date).toLocaleString()
@@ -66,6 +77,27 @@ export default function Page() {
       }
     }
 
+      async function getCreditFinancialDataReq(creditId: string) {
+    
+        try {
+          setLoadingGlobal(true);
+          const req = (await getCreditFinancialData(creditId, token as string)) as Response;
+          if (req.state) {
+            const data = req.data as CreditFinancialInfo;
+            setCreditFinancialInfo(data);
+    
+          } else {
+            handleToast('error', 'error obteniendo informacion de credito, refresque la pagina')
+            setDisplayPdfView(false);
+          }
+        } catch (error) {
+          handleToast('error', 'error obteniendo informacion de credito, refresque la pagina');
+          setDisplayPdfView(false);
+        } finally {
+          setLoadingGlobal(false);
+        }
+      }
+
   async function loadMoreLocations() {
     const nextPage = page + 1;
     setPage(nextPage);
@@ -93,6 +125,7 @@ export default function Page() {
     setCreditId(id)
     getTicketsPayed(page, id as string)
     getCreditInfoById(id)
+    getCreditFinancialDataReq(id)
   },[])
 
 
@@ -181,6 +214,7 @@ export default function Page() {
             <PDFViewer style={{ width: "100%", height: "50vh" }}>
               <OperatorCreditPdf
                 creditInfo={creditInfo}
+                financialInfo={ creditFinancialInfo}
               />
             </PDFViewer>
           )
