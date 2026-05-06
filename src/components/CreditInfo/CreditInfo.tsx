@@ -34,7 +34,7 @@ export default function CreditInfoComponent(props: ICreditProps) {
     <div className="credit-info-content">
       <div className="credit-info-header-row">
         <h1 className="secondary-header">Informacion de ultimo credito</h1>
-        <button className="trash-icon-container">
+        <button className="icon-button-container">
           <PrinterIcon />
         </button>
       </div>

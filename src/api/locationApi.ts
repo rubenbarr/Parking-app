@@ -159,3 +159,22 @@ export async function getBarrierHistory(
     return error;
   }
 }
+export async function getAllTicketsForPrinting(
+  token: string,
+  locationId: string,
+  fromDate: string,
+  toDate: string,
+) {
+  try {
+    const req = await fetchWithTimeout(
+      `${LOCALHOST}/api/ticketRoute/getAllTickets/${locationId}?fromDate=${fromDate}&toDate=${toDate}`,
+      {
+        method: GET,
+        headers: { ...headers(token) },
+      },
+    );
+    return req;
+  } catch (error) {
+    return error;
+  }
+}

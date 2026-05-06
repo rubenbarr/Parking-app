@@ -230,7 +230,7 @@ export default function Page() {
             />
             <div className="input-buttons">
               <button
-                className="trash-icon-container"
+                className="icon-button-container"
                 onClick={() => {
                   setResult("");
                 }}

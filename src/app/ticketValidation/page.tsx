@@ -514,7 +514,7 @@ export default function TicketValidation() {
         <div style={{display:"flex", flexDirection:"row", alignItems:"center", gap:10, marginBottom:10}}>
           <b>Coloque la id del codigo</b>
           <div
-            className="trash-icon-container"
+            className="icon-button-container"
             onClick={() => setResult("")}
             >
           <TrashIcon />
@@ -604,7 +604,7 @@ export default function TicketValidation() {
         <div style={{display:"flex", flexDirection:"row", alignItems:"center", gap:10, marginBottom:10}}>
           <b>Validacion manual, coloque el id del ticket</b>
           <div
-            className="trash-icon-container"
+            className="icon-button-container"
             onClick={() => setResult("")}
             >
           <TrashIcon />

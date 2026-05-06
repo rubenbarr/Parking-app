@@ -925,7 +925,7 @@ export default function PayTicketInLocation() {
               }}
             />
             <div
-              className="trash-icon-container"
+              className="icon-button-container"
               onClick={() => setTicketId("")}
             >
               <TrashIcon />

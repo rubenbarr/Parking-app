@@ -90,8 +90,8 @@ export default function Page() {
             handleToast('error', 'error obteniendo informacion de credito, refresque la pagina')
             setDisplayPdfView(false);
           }
-        } catch (error) {
-          handleToast('error', 'error obteniendo informacion de credito, refresque la pagina');
+        } catch (error:any) {
+          handleToast('error', (error?.message,'error obteniendo informacion de credito, refresque la pagina'));
           setDisplayPdfView(false);
         } finally {
           setLoadingGlobal(false);
@@ -235,7 +235,7 @@ export default function Page() {
       ?
      <button className='primary-button' onClick={() => {setDisplayPdfView(false)}}>Ocultar impresion</button> 
      :
-    <button className='trash-icon-container' onClick={() => {setDisplayPdfView(true)}}>
+    <button className='icon-button-container' onClick={() => {setDisplayPdfView(true)}}>
       <PrinterIcon/>
     </button> }
     {myPaymentsList()}

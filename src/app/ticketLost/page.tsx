@@ -300,7 +300,7 @@ export default function TicketLost() {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <label className="header-title">Busqueda de ticket</label>
           <button
-            className="trash-icon-container"
+            className="icon-button-container"
             onClick={() => setShouldDisplayTickeList((prev) => !prev)}
           >
             {displayTicketList ? <ArrowUp /> : <ArrowRightIcon />}

@@ -19,7 +19,7 @@ import {
 } from "@/store/slices/locationInfoSlice";
 
 import { transformToCurrency } from "@/assets/utils";
-import { ArrowRightIcon, ArrowUp, TrashIcon } from "lucide-react";
+import { ArrowRightIcon, ArrowUp, PrinterIcon, TrashIcon } from "lucide-react";
 import { ITicket } from "@/types/ticket";
 import { getTicketInfoById } from "@/api/ticketsApi";
 import { Response } from "@/api/usersApi";
@@ -27,7 +27,12 @@ import { Response } from "@/api/usersApi";
 import Toggle from "@/components/Toggle/ToggleComp";
 import { Html5Qrcode } from "html5-qrcode";
 
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+
 import "./locationInfoStyle.scss";
+import { getAllTicketsForPrinting } from "@/api/locationApi";
+
 
 export default function Page() {
   const { isLoadingGlobal, setLoadingGlobal, token, handleToast } = useAuth();
@@ -104,11 +109,33 @@ export default function Page() {
   const [scanning, setIsScanning] = useState(false);
   const [shouldDisplayQrReader, setshouldDisplayQrReader] = useState(false);
   const [autoFind, setAutoFind] = useState<boolean>(false);
+  const [ticketsToPrint, setTicketsToPrint] = useState<string[] | null>(null);
+
 
   const qrRef = useRef<HTMLDivElement>(null);
   const qrInstance = useRef<Html5Qrcode>(null);
 
   //  end of declaration state
+
+  const exportTicketsToExcel = (tickets:ITicket[]) => {
+  const worksheet = XLSX.utils.json_to_sheet(tickets);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Tickets");
+
+  // Generate file
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array"
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8"
+  });
+
+  saveAs(blob, "tickets.xlsx");
+}; 
 
   function getLocationInfo(token: string, locationId: string) {
     setLoadingGlobal(true);
@@ -117,6 +144,18 @@ export default function Page() {
       .finally(() => setLoadingGlobal(false));
   }
 
+  function getTicketsListForPrinting(params: ITicketsParams){
+    setLoadingGlobal(true);
+    getAllTicketsForPrinting(params.token, params.locationId, params.fromDate, params.toDate).then((res) => {
+      const response = res as Response;
+      if (!response.state) {
+        return handleToast('error', response.message || 'Error obteniendo tickets para impresion');
+      }
+      exportTicketsToExcel(response.data as ITicket[])
+      setTicketsToPrint(response.data as string[]);
+    }).catch((error:unknown) => handleToast('error', 'Error obteniendo tickets para impresion'))
+    .finally(()=> setLoadingGlobal(false))
+  }
   function dispatchTickets(params: ITicketsParams) {
     setLoadingGlobal(true);
     dispatch(fetchTickets(params))
@@ -496,7 +535,7 @@ export default function Page() {
           />
           <div className="input-buttons">
             <button
-              className="trash-icon-container"
+              className="icon-button-container"
               onClick={() => {
                 setTicketId("");
               }}
@@ -614,7 +653,7 @@ export default function Page() {
           <div className="header-row">
             <label className="header-title">Operadores</label>
             <button
-              className="trash-icon-container"
+              className="icon-button-container"
               onClick={() => setShouldDisplayOperatorsTable((prev) => !prev)}
             >
               {shouldDisplayOperatorsTable ? <ArrowUp /> : <ArrowRightIcon />}
@@ -660,7 +699,7 @@ export default function Page() {
           <div className="header-row">
             <label className="header-title">Kioscos</label>
             <button
-              className="trash-icon-container"
+              className="icon-button-container"
               onClick={() => setShouldDisplayKioscoTable((prev) => !prev)}
             >
               {shouldDisplayKioscoTable ? <ArrowUp /> : <ArrowRightIcon />}
@@ -705,7 +744,7 @@ export default function Page() {
           <div className="header-row">
             <label className="header-title">Historial de barreras</label>
             <button
-              className="trash-icon-container"
+              className="icon-button-container"
               onClick={() => setShouldDisplayBarrierTable((prev) => !prev)}
             >
               {shouldDisplayBarrierTable ? <ArrowUp /> : <ArrowRightIcon />}
@@ -777,10 +816,18 @@ export default function Page() {
               <option value="2doTurno">2do Turno</option>
             </select>
           </div>
+          <div className="w-[100%] flex justify-between items-center">
           <label>
             {" "}
             <b>{"Fecha Actual: "}</b> {currentDate}
           </label>
+          <button className="icon-button-container" onClick={() => { 
+            if(locationId && token){ 
+              getTicketsListForPrinting({locationId, token, fromDate, toDate, page:1, limit: 1 })
+            }}}>
+          <PrinterIcon/>
+          </button>
+          </div>
           <div className="financial-content-body">
             <div className="row">
               <label>Buscar por fecha</label>

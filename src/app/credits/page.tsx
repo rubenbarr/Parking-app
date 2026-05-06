@@ -1009,7 +1009,7 @@ const printActionButtons = () => {
       ?
       <button className='primary-button' onClick={() => {SetDisplayPdfView(false)}}>Ocultar impresion</button> 
       :
-      <button className='trash-icon-container' onClick={() => {SetDisplayPdfView(true)}}>
+      <button className='icon-button-container' onClick={() => {SetDisplayPdfView(true)}}>
       <PrinterIcon/>
       </button> }
         </>
