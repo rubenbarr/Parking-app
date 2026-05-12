@@ -16,6 +16,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   section: {
+    marginTop:5,
     marginBottom: 5,
   },
   header: {
@@ -29,6 +30,9 @@ const styles = StyleSheet.create({
   label: {
     fontWeight: "bold",
   },
+  bottom: {
+    fontSize: 9,
+  }
 });
 
 interface TicketProps {
@@ -50,7 +54,7 @@ export const TicketPDF = (props: TicketProps) => {
   }
   return (
     <Document ref= {props.ref}>
-      <Page size={[155, 210]} style={styles.page}>
+      <Page size={[155, 300]} style={styles.page}>
         <View style={styles.section}>
           <View style={{display:"flex", width:"100%", alignItems:"center", justifyContent:"center"}}>
             <Text style={[styles.header]}>{locationTitle}</Text>
@@ -85,8 +89,16 @@ export const TicketPDF = (props: TicketProps) => {
           </View>
           <View style={styles.section}>
             {/* <Text>{"RFC: COTJ92052353"}</Text> */}
-            <Text>
+            <Text style={styles.bottom}>
                 Gracias por usar nuestro servicio. Vuelva pronto
+            </Text>
+          </View>
+          <View>
+            <Text style={styles.bottom}>
+              Para facturar tiene hasta el último día de mes trascurrido, mande correo a
+            </Text>
+            <Text style={styles.bottom}>
+               angelopolispaseo@gmail.com con tus datos fiscales y  foto de este comprobante
             </Text>
           </View>
         </View>
